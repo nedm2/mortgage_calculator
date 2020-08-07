@@ -28,14 +28,18 @@ def evaluate_step(
     )-> Tuple[float, float]:
     """
     Evaluates the status of the loan following the passed number of periods.
-    Returns the remaining loan value and the interest paid in this step.
+    :param rate: Interest rate in this step
+    :param periods: Number of periods covered in this step
+    :param principal: Value of loan at start of this step
+    :param payment: Amount paid off in each period of this step
+    Returns (remaining loan value, interest paid in this step)
     """
     interest_acc : float = 0
     for period in range(periods):
         interest = principal * rate
         interest_acc += interest
         principal = principal + interest - payment
-    return (principal - payment*periods, interest_acc)
+    return (principal, interest_acc)
 
 
 def pmt(rate, periods, present_value):
