@@ -1,4 +1,4 @@
-import time
+from typing import Tuple
 
 """
 e.g. 491750, 35 years 2.9%
@@ -20,21 +20,26 @@ mortgage_scenarios = [
   , [(491750, 30, [(0.035, 30)])]
 ]
 
-def total_interest(rate, periods, principal, payment):
+def evaluate_step(
+        rate : float,
+        periods : int,
+        principal : float,
+        payment : float
+    )-> Tuple[float, float]:
     """
-    Return the total amount of interest paid over the lifetime
-    of the loan.
+    Evaluates the status of the loan following the passed number of periods.
+    Returns the remaining loan value and the interest paid in this step.
     """
-    interest_acc = 0
+    interest_acc : float = 0
     for period in range(periods):
         interest = principal * rate
         interest_acc += interest
         principal = principal + interest - payment
-    return interest_acc
+    return (principal - payment*periods, interest_acc)
 
 
 def pmt(rate, periods, present_value):
-    payment = 1000
+    payment: float = 1000
     while True:
         remaining = present_value
         for period in range(periods):
@@ -52,10 +57,10 @@ def evaluate_scenario(scenario):
 
         monthly_payment = pmt(
             monthly_interest_rate, duration_months, principal)
-        total_interest_paid = total_interest(
+        (remaining, interest) = evaluate_step(
                 monthly_interest_rate, duration_months, principal, monthly_payment)
         print(f"{principal} for {duration_years} years at {annual_interest_rate*100:.2f}%:\
-                {monthly_payment:.0f}/month costing {total_interest_paid:.0f}")
+                {monthly_payment:.0f}/month costing {interest:.0f}")
 
 if __name__ == "__main__":
     for scenario in mortgage_scenarios:
