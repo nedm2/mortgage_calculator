@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, List
 
 """
 e.g. 491750, 35 years 2.9%
@@ -11,8 +11,19 @@ paramaterization
 [(principal, total_duration, [rate, duration]), ...]
 """
 
-mortgage_scenarios = [
-    [(491750, 35, [(0.025, 35)])]
+mortgage_scenarios : List[List[Tuple[int, int, List[Tuple[float, int]]]]] = [
+    [(150000, 35, [(0.0195, 35)])]
+  , [(150000, 35, [(0.022, 35)])]
+  , [(150000, 35, [(0.023, 35)])]
+  , [(150000, 35, [(0.025, 35)])]
+  , [(300000, 35, [(0.0195, 35)])]
+  , [(300000, 35, [(0.022, 35)])]
+  , [(300000, 35, [(0.023, 35)])]
+  , [(300000, 35, [(0.025, 35)])]
+  , [(491750, 35, [(0.0195, 35)])]
+  , [(491750, 35, [(0.022, 35)])]
+  , [(491750, 35, [(0.023, 35)])]
+  , [(491750, 35, [(0.025, 35)])]
   , [(491750, 35, [(0.029, 35)])]
   , [(491750, 35, [(0.035, 35)])]
   , [(491750, 30, [(0.025, 30)])]
@@ -53,7 +64,8 @@ def pmt(rate, periods, present_value):
             return payment
         payment += remaining/periods
 
-def evaluate_scenario(scenario):
+def evaluate_scenario(scenario : List):
+    total_interest_paid: float = 0
     for (principal, duration_years, steps) in scenario:
         annual_interest_rate = steps[0][0]
         monthly_interest_rate = annual_interest_rate / 12.0
@@ -63,6 +75,7 @@ def evaluate_scenario(scenario):
             monthly_interest_rate, duration_months, principal)
         (remaining, interest) = evaluate_step(
                 monthly_interest_rate, duration_months, principal, monthly_payment)
+        total_interest_paid += interest
         print(f"{principal} for {duration_years} years at {annual_interest_rate*100:.2f}%:\
                 {monthly_payment:.0f}/month costing {interest:.0f}")
 
