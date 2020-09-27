@@ -31,7 +31,7 @@ mortgage_scenarios : List[List[Tuple[int, int, List[Tuple[float, int]]]]] = [
   , [(491750, 30, [(0.035, 30)])]
 ]
 
-def evaluate_step(
+def step_iter(
         rate : float,
         periods : int,
         principal : float,
@@ -52,8 +52,16 @@ def evaluate_step(
         principal = principal + interest - payment
     return (principal, interest_acc)
 
+def step(i : float, n : int, P : float, A : float) -> Tuple[float, float]:
+    remaining_principal = P*(1+i)**n - A*((1+i)**n - 1)/i
+    interest_paid = (P*i - A)*((1+i)**n - 1)/i + A*n
+    return(remaining_principal, interest_paid)
 
-def pmt(rate, periods, present_value):
+
+def pmt(i : float, n : int, P :float):
+    return P*(i*(i+1)**n)/((1+i)**n - 1)
+
+def pmt_iter(rate, periods, present_value):
     payment: float = 1000
     while True:
         remaining = present_value
@@ -68,12 +76,12 @@ def evaluate_scenario(scenario : List):
     total_interest_paid: float = 0
     for (principal, duration_years, steps) in scenario:
         annual_interest_rate = steps[0][0]
-        monthly_interest_rate = annual_interest_rate / 12.0
+        monthly_interest_rate = (1+annual_interest_rate)**(1.0/12) - 1
         duration_months = duration_years * 12
 
         monthly_payment = pmt(
             monthly_interest_rate, duration_months, principal)
-        (remaining, interest) = evaluate_step(
+        (remaining, interest) = step(
                 monthly_interest_rate, duration_months, principal, monthly_payment)
         total_interest_paid += interest
         print(f"{principal} for {duration_years} years at {annual_interest_rate*100:.2f}%:\
