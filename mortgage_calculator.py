@@ -1,4 +1,5 @@
 from typing import Tuple, List
+import argparse
 
 """
 e.g. 491750, 35 years 2.9%
@@ -11,24 +12,43 @@ paramaterization
 [(principal, total_duration, [rate, duration]), ...]
 """
 
-mortgage_scenarios : List[List[Tuple[int, int, List[Tuple[float, int]]]]] = [
-    [(150000, 35, [(0.0195, 35)])]
-  , [(150000, 35, [(0.022, 35)])]
-  , [(150000, 35, [(0.023, 35)])]
-  , [(150000, 35, [(0.025, 35)])]
-  , [(300000, 35, [(0.0195, 35)])]
-  , [(300000, 35, [(0.022, 35)])]
-  , [(300000, 35, [(0.023, 35)])]
-  , [(300000, 35, [(0.025, 35)])]
-  , [(491750, 35, [(0.0195, 35)])]
-  , [(491750, 35, [(0.022, 35)])]
-  , [(491750, 35, [(0.023, 35)])]
-  , [(491750, 35, [(0.025, 35)])]
-  , [(491750, 35, [(0.029, 35)])]
-  , [(491750, 35, [(0.035, 35)])]
-  , [(491750, 30, [(0.025, 30)])]
-  , [(491750, 30, [(0.029, 30)])]
-  , [(491750, 30, [(0.035, 30)])]
+class MortgageScenario:
+    def __init__(
+            self,
+            principal : float,
+            steps : List[Tuple[float, int, int]]
+        ):
+        """
+        :param principal: Total principal of the mortgage
+        :param steps: Steps of (rate, maturity, fixed_term)
+        """
+        self.principal = principal
+        self.steps = steps
+
+
+mortgage_scenarios : List[MortgageScenario] = [
+    MortgageScenario(491750, [(0.023, 35, 5), (0.0195, 30, 30)]),
+    MortgageScenario(491750, [(0.023, 35, 3), (0.0195, 32, 32)]),
+    MortgageScenario(491750, [(0.023, 35, 35)]),
+    MortgageScenario(491750, [(0.0195, 35, 35)]),
+    MortgageScenario(491750, [(0.0195, 35, 5), (0.0195, 30, 30)]),
+    # [(150000, 35, [(0.0195, 35)])]
+  # , [(150000, 35, [(0.022, 35)])]
+  # , [(150000, 35, [(0.023, 35)])]
+  # , [(150000, 35, [(0.025, 35)])]
+  # , [(300000, 35, [(0.0195, 35)])]
+  # , [(300000, 35, [(0.022, 35)])]
+  # , [(300000, 35, [(0.023, 35)])]
+  # , [(300000, 35, [(0.025, 35)])]
+  # , [(491750, 35, [(0.0195, 35)])]
+  # , [(491750, 35, [(0.022, 35)])]
+  # , [(491750, 35, [(0.023, 35)])]
+  # , [(491750, 35, [(0.025, 35)])]
+  # , [(491750, 35, [(0.029, 35)])]
+  # , [(491750, 35, [(0.035, 35)])]
+  # , [(491750, 30, [(0.025, 30)])]
+  # , [(491750, 30, [(0.029, 30)])]
+  # , [(491750, 30, [(0.035, 30)])]
 ]
 
 def step_iter(
@@ -72,21 +92,34 @@ def pmt_iter(rate, periods, present_value):
             return payment
         payment += remaining/periods
 
-def evaluate_scenario(scenario : List):
+def evaluate_scenario(scenario : MortgageScenario):
+    """
+    Evaluates a mortgage scenario and displays the principal, payment and
+    interest after each step.
+    :param scenario: List of steps to play out a particular scenario
+    """
+    assert (scenario.steps[-1][1] == scenario.steps[-1][2]), "Final step must have equal maturity and term"
+    print("scenario:")
     total_interest_paid: float = 0
-    for (principal, duration_years, steps) in scenario:
-        annual_interest_rate = steps[0][0]
-        monthly_interest_rate = (1+annual_interest_rate)**(1.0/12) - 1
-        duration_months = duration_years * 12
+    remaining_principal: float = scenario.principal
+    for (apr, maturity_years, fixed_term_years) in scenario.steps:
+        monthly_rate = (1+apr)**(1.0/12) - 1
+        maturity_months = maturity_years * 12
+        fixed_term_months = fixed_term_years * 12
 
-        monthly_payment = pmt(
-            monthly_interest_rate, duration_months, principal)
+        monthly_payment = pmt(monthly_rate, maturity_months, remaining_principal)
         (remaining, interest) = step(
-                monthly_interest_rate, duration_months, principal, monthly_payment)
+                monthly_rate, fixed_term_months, remaining_principal, monthly_payment)
         total_interest_paid += interest
-        print(f"{principal} for {duration_years} years at {annual_interest_rate*100:.2f}%:\
+        print(f"\t{remaining_principal:.2f} over {maturity_years} years for {fixed_term_years} years at {apr*100:.2f}%:\
                 {monthly_payment:.0f}/month costing {interest:.0f}")
+        remaining_principal = remaining
+    print(f"\tTOTAL COST = {total_interest_paid:.2f}")
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Evaluate mortgage scenarios')
+    parser.add_argument("--file", type=str, default="")
+    args = parser.parse_args()
+
     for scenario in mortgage_scenarios:
         evaluate_scenario(scenario)
